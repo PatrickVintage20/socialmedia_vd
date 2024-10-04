@@ -1,0 +1,52 @@
+{% extends 'vd_app/base.html' %}
+
+{% block title %}
+    {{ video_info.title }}
+{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <!-- Responsive Title and Social Media Handles -->
+            <h1 class="display-4 display-md-3">NoN VIDEO DOWNLOADER</h1>
+            <div class="mb-4">
+                <i class="fab fa-facebook fa-lg mx-2"></i>
+                <i class="fab fa-youtube fa-lg mx-2"></i>
+                <!--<i class="fab fa-instagram fa-lg mx-2"></i>
+                <i class="fab fa-tiktok fa-lg mx-2"></i>-->
+                <i class="fab fa-twitter fa-lg mx-2"></i>
+            </div>
+
+            <!-- Input field for a new video search -->
+            <form method="post" action="{% url 'video_download' %}" class="form-inline justify-content-center mt-4">
+                {% csrf_token %}
+                <div class="form-group mx-sm-3 mb-2" style="flex-grow: 1;">
+                    <input type="url" class="form-control shadow w-100" id="videoUrl" placeholder="Enter video URL" name="url" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Fetch Another Video</button>
+            </form>
+
+            <!-- Video Information Display -->
+            <h2 class="mt-4">{{ video_info.title }}</h2>
+            <img src="{{ video_info.thumbnail_url }}" alt="Thumbnail" class="img-fluid mb-3" style="max-width: 60%; border-radius: 5px;">
+            <p class="lead">{{ video_info.description }}</p>
+
+            <!-- Video Quality Selection or Direct Download -->
+            {% if video_info.formats %}
+            <form method="get" action="{% url 'download_video' video_info.video_url %}">
+                <div class="form-group">
+                    <label for="quality">Select Video Quality:</label>
+                    <select name="quality" id="quality" class="form-control mb-2">
+                        {% for format in video_info.formats %}
+                        <option value="{{ format.format_id }}">{{ format.format_note }} ({{ format.resolution }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg">Download</button>
+            </form>
+            {% else %}
+            <a href="{% url 'download_video' video_info.video_url %}" class="btn btn-success btn-lg">Download Video</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

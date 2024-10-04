@@ -1,0 +1,46 @@
+{% extends 'vd_app/base.html' %}
+
+{% block title %}
+All social media Video Downloader
+{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <!-- Responsive Title -->
+            <h1 class="display-4 display-md-3">All social media VIDEO DOWNLOADER</h1>
+
+            <!-- Social Media Icons -->
+            <div class="social-icons my-3">
+                <a href="#" class="mx-2">
+                    <img src="https://img.icons8.com/fluent/48/000000/facebook-new.png" alt="Facebook" style="max-width: 40px;">
+                </a>
+                <a href="#" class="mx-2">
+                    <img src="https://img.icons8.com/fluent/48/000000/youtube-play.png" alt="YouTube" style="max-width: 40px;">
+                </a>
+                <!--<a href="#" class="mx-2">
+                    <img src="https://img.icons8.com/fluent/48/000000/instagram-new.png" alt="Instagram" style="max-width: 40px;">
+                </a>
+                <a href="#" class="mx-2">
+                    <img src="https://img.icons8.com/fluent/48/000000/tiktok.png" alt="TikTok" style="max-width: 40px;">
+                </a>-->
+                <a href="#" class="mx-2">
+                    <img src="https://img.icons8.com/fluent/48/000000/twitter.png" alt="Twitter" style="max-width: 40px;">
+                </a>
+            </div>
+
+            <!-- Video URL Form -->
+            <form method="post" action="{% url 'video_download' %}" class="form-inline justify-content-center mt-4">
+                {% csrf_token %}
+                <div class="form-group mb-2" style="flex-grow: 1;">
+                    <input type="url" class="form-control shadow w-100" id="videoUrl" placeholder="Enter video URL" name="url" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2 ml-2">Download</button>
+            </form>
+
+            {% if error %}
+            <div class="alert alert-danger mt-3">{{ error }}</div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

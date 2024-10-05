@@ -1,3 +1,32 @@
+import requests
+from django.http import JsonResponse
+from django.shortcuts import render
+
+def download_video(request):
+    if request.method == "POST":
+        video_url = request.POST.get('url')
+        filename = request.POST.get('filename', 'video_download')  # Default filename
+        
+        api_url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/all"
+        headers = {
+            "x-rapidapi-host": "social-media-video-downloader.p.rapidapi.com",
+            "x-rapidapi-key": "edb9006024mshc614a8e04873cecp1b25f4jsna580f65d63b4"  # Replace with your actual API key
+        }
+        params = {
+            "url": video_url,
+            "filename": filename
+        }
+
+        response = requests.get(api_url, headers=headers, params=params)
+
+        if response.status_code == 200:
+            video_data = response.json()
+            return JsonResponse(video_data)
+        else:
+            return JsonResponse({"error": "Failed to download video"}, status=response.status_code)
+
+    return render(request, 'download_video.html')  # Render your form or page for input
+"""
 from django.shortcuts import render
 from django.http import HttpResponse, StreamingHttpResponse
 from urllib.parse import urlencode, unquote_plus
@@ -15,7 +44,7 @@ from .utils import get_video_info
 
 # View to handle video URL form and display video information
 def video_download_view(request):
-    if request.method == 'POST':
+    if request.method == 'POST':s
         form = VideoURLForm(request.POST)
         if form.is_valid():
             url = form.cleaned_data['url']
@@ -103,5 +132,7 @@ def how_to(request):
 
 def contact_us(request):
     return render(request, 'vd_app/contact_us.html')
+    
+"""
 
 

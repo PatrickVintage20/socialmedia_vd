@@ -27,7 +27,7 @@ def scrape_instagram_video_view(request):
     return JsonResponse({'status': 'success', 'message': 'Instagram video downloaded successfully!'})
 
 
-def Home(request):
+def scrape_video(request):
     return render(request, "vd_app/video_download.html")
 
 def how_to(request):

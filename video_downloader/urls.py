@@ -22,7 +22,7 @@ from vd_app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('vd_app.urls')),
-    path('Home/', views.Home, name="home"),
+    path('Home/', views.scrape_video, name="home"),
     path('how-to-use/', views.how_to, name='how_to'),
     path('contact-us/', views.contact_us, name='contact_us'),
 ]

@@ -4,6 +4,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('', views.scrape_video, name='video_download'),  # Root URL points to scrape_video view
     path('scrape_youtube/', views.scrape_youtube_video_view, name='scrape_youtube'),
     path('scrape_facebook/', views.scrape_facebook_video_view, name='scrape_facebook'),
     path('scrape_twitter/', views.scrape_twitter_video_view, name='scrape_twitter'),

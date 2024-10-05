@@ -21,7 +21,7 @@ All social media Video Downloader
                 </a>
             </div>
 
-            <form method="post" action="{% url 'download_video' %}" class="form-inline justify-content-center mt-4">
+            <form method="post" action="{% url 'video_download' %}" class="form-inline justify-content-center mt-4">
                 {% csrf_token %}
                 <div class="form-group mb-2" style="flex-grow: 1;">
                     <input type="url" class="form-control shadow w-100" id="videoUrl" placeholder="Enter video URL" name="url" required>

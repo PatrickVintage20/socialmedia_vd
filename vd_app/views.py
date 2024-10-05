@@ -24,6 +24,8 @@ def download_video_with_ytdlp(video_url, output_filename):
             'filename': ydl.prepare_filename(info_dict)
         }
 
+import concurrent.futures
+
 def video_download(request):
     video_info = {}
 
@@ -33,12 +35,16 @@ def video_download(request):
 
         try:
             output_filename = platform + "_video.mp4"
-            video_info = download_video_with_ytdlp(video_url, output_filename)
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(download_video_with_ytdlp, video_url, output_filename)
+                video_info = future.result()
 
         except Exception as e:
             video_info['error'] = str(e)
 
     return render(request, 'vd_app/video_download.html', {'video_info': video_info})
+
+
 
 def download_video(request, filename):
     file_path = os.path.join(DOWNLOAD_DIR, filename)

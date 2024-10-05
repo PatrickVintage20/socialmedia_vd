@@ -2,15 +2,10 @@ import yt_dlp
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 import os
+import tempfile
 
-
-# Directory to store the downloaded videos
-DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'downloads')
-
-# Ensure the downloads directory exists
-if not os.path.exists(DOWNLOAD_DIR):
-    os.makedirs(DOWNLOAD_DIR)
-
+# Directory to store the downloaded videos (temporary storage)
+DOWNLOAD_DIR = tempfile.gettempdir()  # Use system's temp directory
 
 def download_video_with_ytdlp(video_url, output_filename):
     ydl_opts = {
@@ -29,7 +24,6 @@ def download_video_with_ytdlp(video_url, output_filename):
             'filename': ydl.prepare_filename(info_dict)
         }
 
-
 def video_download(request):
     video_info = {}
 
@@ -46,7 +40,6 @@ def video_download(request):
 
     return render(request, 'vd_app/video_download.html', {'video_info': video_info})
 
-
 def download_video(request, filename):
     file_path = os.path.join(DOWNLOAD_DIR, filename)
     if os.path.exists(file_path):
@@ -56,6 +49,7 @@ def download_video(request, filename):
             return response
     else:
         return JsonResponse({'error': 'File not found.'})
+
 
 
 def get_platform_from_url(url):

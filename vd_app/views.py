@@ -2,7 +2,7 @@ import requests
 from django.http import JsonResponse
 from django.shortcuts import render
 
-def download_video_view(request):
+def video_download_view(request):
     if request.method == "POST":
         video_url = request.POST.get('url')
         filename = request.POST.get('filename', 'video_download')  # Default filename
@@ -25,7 +25,52 @@ def download_video_view(request):
         else:
             return JsonResponse({"error": "Failed to download video"}, status=response.status_code)
 
-    return render(request, 'download_video.html')  # Render your form or page for input
+    return render(request, 'video_download.html')  # Render your form or page for input
+
+
+
+RAPIDAPI_HOST = 'social-media-video-downloader.p.rapidapi.com'
+RAPIDAPI_KEY = 'edb9006024mshc614a8e04873cecp1b25f4jsna580f65d63b4'  # Replace with your actual RapidAPI key
+
+def download_video_view(request, url):
+    if request.method == 'GET':
+        try:
+            # Make request to RapidAPI to download the video
+            response = requests.get(
+                f'https://{RAPIDAPI_HOST}/smvd/get/all',
+                headers={
+                    'x-rapidapi-host': RAPIDAPI_HOST,
+                    'x-rapidapi-key': RAPIDAPI_KEY,
+                },
+                params={'url': url}
+            )
+
+            # Check if the response from API is successful
+            if response.status_code == 200:
+                video_data = response.json()  # Assuming the response is in JSON format
+                # Pass video data to the template
+                return render(request, 'vd_app/video_download.html', {'video_data': video_data})
+
+            else:
+                return render(request, 'vd_app/video_download.html', {'error': 'Failed to download video. Try again later.'})
+        except Exception as e:
+            return render(request, 'vd_app/video_download.html', {'error': str(e)})
+    else:
+        return JsonResponse({'error': 'Invalid request method. Use GET instead.'}, status=400)
+
+
+def Home(request):
+    return render(request, "vd_app/video_download.html")
+
+def how_to(request):
+    return render(request, 'vd_app/how_to.html')
+
+def contact_us(request):
+    return render(request, 'vd_app/contact_us.html')
+
+    
+
+
 """
 from django.shortcuts import render
 from django.http import HttpResponse, StreamingHttpResponse
@@ -124,14 +169,7 @@ def video_download(request):
 
 
 
-def Home(request):
-    return render(request, "vd_app/video_download.html")
 
-def how_to(request):
-    return render(request, 'vd_app/how_to.html')
-
-def contact_us(request):
-    return render(request, 'vd_app/contact_us.html')
     
 """
 

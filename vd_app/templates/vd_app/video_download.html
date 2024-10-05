@@ -1,56 +1,75 @@
 {% extends 'vd_app/base.html' %}
 
 {% block title %}
-    Video Downloader
+    All Social Media Video Download
 {% endblock %}
 
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-md-8 text-center">
-            <!-- Responsive Title and Social Media Handles -->
-            <h1 class="display-4 display-md-3">NoN VIDEO DOWNLOADER</h1>
-            <div class="mb-4">
-                <i class="fab fa-facebook fa-lg mx-2"></i>
-                <i class="fab fa-youtube fa-lg mx-2"></i>
-                <!--<i class="fab fa-instagram fa-lg mx-2"></i>
-                <i class="fab fa-tiktok fa-lg mx-2"></i>-->
-                <i class="fab fa-twitter fa-lg mx-2"></i>
+    <div class="d-flex flex-column min-vh-100">
+        <div class="container flex-grow-1">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+
+                    <!-- Website Title -->
+                    <h1 class="display-3 font-weight-bold mt-5" style="font-size: 3.5rem; line-height: 1.2;">
+                        All Social Media Video Download
+                    </h1>
+                    <p class="lead mb-4">Download videos from all popular social media platforms.</p>
+
+                    <!-- Social Media Icons -->
+                    <div class="mb-4">
+                        <i class="fab fa-facebook fa-2x mx-2"></i>
+                        <i class="fab fa-youtube fa-2x mx-2"></i>
+                        <i class="fab fa-instagram fa-2x mx-2"></i>
+                        <i class="fab fa-tiktok fa-2x mx-2"></i>
+                        <i class="fab fa-twitter fa-2x mx-2"></i>
+                    </div>
+
+                    <!-- Input field for video URL -->
+                    <form method="post" action="{% url 'video_download' %}" class="form-inline justify-content-center mt-4 w-100">
+                        {% csrf_token %}
+                        <div class="input-group mb-3 shadow" style="max-width: 600px; width: 100%;">
+                            <input type="url" class="form-control" id="videoUrl" placeholder="Paste your video URL here" name="url" required aria-label="Video URL">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit">Fetch Video</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    {% if video_info %}
+                        <!-- Video Information Display -->
+                        <div class="video-info mt-5 text-left">
+                            <h2 class="font-weight-bold">{{ video_info.title }}</h2>
+                            <img src="{{ video_info.thumbnail }}" alt="Thumbnail" class="img-fluid my-3" style="max-width: 100%; border-radius: 10px;">
+                            <p class="lead">{{ video_info.description }}</p>
+
+                            <!-- Video Quality Selection or Direct Download -->
+                            {% if video_info.formats %}
+                                <form method="get" action="{% url 'download_video' video_info.filename %}">
+                                    <div class="form-group">
+                                        <label for="quality">Select Video Quality:</label>
+                                        <select name="quality" id="quality" class="form-control mb-3">
+                                            {% for format in video_info.formats %}
+                                                <option value="{{ format.format_id }}">{{ format.format_note }} ({{ format.resolution }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-lg btn-block">Download</button>
+                                </form>
+                            {% else %}
+                                <a href="{% url 'download_video' video_info.filename %}" class="btn btn-success btn-lg btn-block">Download Video</a>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mt-5">Enter a valid video URL to start downloading.</p>
+                    {% endif %}
+                </div>
             </div>
-
-            <!-- Input field for a new video search -->
-            <form method="post" action="{% url 'video_download' %}" class="form-inline justify-content-center mt-4">
-                {% csrf_token %}
-                <div class="form-group mx-sm-3 mb-2" style="flex-grow: 1;">
-                    <input type="url" class="form-control shadow w-100" id="videoUrl" placeholder="Enter video URL" name="url" required>
-                </div>
-                <button type="submit" class="btn btn-primary mb-2">Fetch Another Video</button>
-            </form>
-
-            {% if video_info %}
-            <!-- Video Information Display -->
-            <h2 class="mt-4">{{ video_info.title }}</h2>
-            <img src="{{ video_info.thumbnail_url }}" alt="Thumbnail" class="img-fluid mb-3" style="max-width: 60%; border-radius: 5px;">
-            <p class="lead">{{ video_info.description }}</p>
-
-            <!-- Video Quality Selection or Direct Download -->
-            {% if video_info.formats %}
-            <form method="get" action="{% url 'download_video' video_info.video_url %}">
-                <div class="form-group">
-                    <label for="quality">Select Video Quality:</label>
-                    <select name="quality" id="quality" class="form-control mb-2">
-                        {% for format in video_info.formats %}
-                        <option value="{{ format.format_id }}">{{ format.format_note }} ({{ format.resolution }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-success btn-lg">Download</button>
-            </form>
-            {% else %}
-            <a href="{% url 'download_video' video_info.video_url %}" class="btn btn-success btn-lg">Download Video</a>
-            {% endif %}
-            {% else %}
-            <p>No video information available. Please enter a valid URL.</p>
-            {% endif %}
         </div>
+
+        <!-- Footer -->
+        <footer class="mt-5 bg-light text-muted text-center">
+            <p>© 2024 All Social Media Video Download</p>
+        </footer>
     </div>
 {% endblock %}

@@ -1,30 +1,76 @@
-from django.http import JsonResponse
-from .playwright_scrapers import scrape_youtube_video, scrape_facebook_video, scrape_twitter_video, scrape_tiktok_video, scrape_instagram_video
+import yt_dlp
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse
+import os
 
-def scrape_youtube_video_view(request):
-    video_url = request.GET.get('url')
-    scrape_youtube_video(video_url)
-    return JsonResponse({'status': 'success', 'message': 'YouTube video downloaded successfully!'})
 
-def scrape_facebook_video_view(request):
-    video_url = request.GET.get('url')
-    scrape_facebook_video(video_url)
-    return JsonResponse({'status': 'success', 'message': 'Facebook video downloaded successfully!'})
+# Directory to store the downloaded videos
+DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'downloads')
 
-def scrape_twitter_video_view(request):
-    video_url = request.GET.get('url')
-    scrape_twitter_video(video_url)
-    return JsonResponse({'status': 'success', 'message': 'Twitter video downloaded successfully!'})
+# Ensure the downloads directory exists
+if not os.path.exists(DOWNLOAD_DIR):
+    os.makedirs(DOWNLOAD_DIR)
 
-def scrape_tiktok_video_view(request):
-    video_url = request.GET.get('url')
-    scrape_tiktok_video(video_url)
-    return JsonResponse({'status': 'success', 'message': 'TikTok video downloaded successfully!'})
 
-def scrape_instagram_video_view(request):
-    video_url = request.GET.get('url')
-    scrape_instagram_video(video_url)
-    return JsonResponse({'status': 'success', 'message': 'Instagram video downloaded successfully!'})
+def download_video_with_ytdlp(video_url, output_filename):
+    ydl_opts = {
+        'outtmpl': os.path.join(DOWNLOAD_DIR, output_filename),
+        'format': 'best',
+        'quiet': True,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(video_url, download=True)
+        return {
+            'title': info_dict.get('title', 'Unknown Title'),
+            'thumbnail': info_dict.get('thumbnail', ''),
+            'description': info_dict.get('description', 'No description available.'),
+            'formats': ydl.list_formats(info_dict),
+            'filename': ydl.prepare_filename(info_dict)
+        }
+
+
+def video_download(request):
+    video_info = {}
+
+    if request.method == "POST":
+        video_url = request.POST.get('url')
+        platform = get_platform_from_url(video_url)
+
+        try:
+            output_filename = platform + "_video.mp4"
+            video_info = download_video_with_ytdlp(video_url, output_filename)
+
+        except Exception as e:
+            video_info['error'] = str(e)
+
+    return render(request, 'vd_app/video_download.html', {'video_info': video_info})
+
+
+def download_video(request, filename):
+    file_path = os.path.join(DOWNLOAD_DIR, filename)
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as file:
+            response = HttpResponse(file.read(), content_type='video/mp4')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+    else:
+        return JsonResponse({'error': 'File not found.'})
+
+
+def get_platform_from_url(url):
+    """Determines the platform from the URL."""
+    if "youtube.com" in url or "youtu.be" in url:
+        return "youtube"
+    elif "facebook.com" in url:
+        return "facebook"
+    elif "twitter.com" in url:
+        return "twitter"
+    elif "tiktok.com" in url:
+        return "tiktok"
+    elif "instagram.com" in url:
+        return "instagram"
+    return "unknown"
 
 
 def scrape_video(request):
@@ -35,6 +81,7 @@ def how_to(request):
 
 def contact_us(request):
     return render(request, 'vd_app/contact_us.html')
+
 
 
 

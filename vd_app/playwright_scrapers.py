@@ -1,67 +1,149 @@
-import os
-import requests
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions
-import threading
 
-class VideoScraper:
-    def __init__(self, base_url, video_url, output_filename="", audio=False):
-        self.__base_url = base_url
-        self.__home_directory = os.path.expanduser("~")
-        __option = webdriver.FirefoxOptions()
-        __option.add_argument('--headless')
-        self.__driver = webdriver.Firefox(options=__option)
-        self.video_url = video_url
-        self.output_path = output_filename
-        self.audio = audio
+"""
+import youtube_dl
+import instaloader
+from instaloader.exceptions import BadResponseException, LoginRequiredException
+from playwright.sync_api import sync_playwright
+import yt_dlp
+import time
 
-    def __get_download_type_element(self) -> str:
-        """Gets the web element for the download button based on platform."""
-        return "/html/body/div[2]/div/div/div[1]/div/div[2]/div/div[3]/p[1]/a"
 
-    def download_video(self):
-        """Scrapes and downloads the video from the platform."""
-        self.__driver.get(self.__base_url)
-        url_entry_field = self.__driver.find_element(By.NAME, "url")
-        url_entry_field.send_keys(self.video_url)
-        url_entry_field.send_keys(Keys.ENTER)
+# Scraping YouTube video using yt-dlp
+def scrape_youtube_video(url):
+    ydl_opts = {
+        'format': 'best',  # Choose format, 'best' or others
+        'quiet': True,     # Suppress terminal output
+    }
 
-        download_btn = WebDriverWait(self.__driver, 20).until(
-            expected_conditions.presence_of_element_located((By.XPATH, self.__get_download_type_element()))
-        )
-        download_url = download_btn.get_attribute('href')
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(url, download=False)  # Get video info without downloading
+        video_url = info_dict.get('url')
+        video_title = info_dict.get('title')
+        video_thumbnail = info_dict.get('thumbnail')
+        video_description = info_dict.get('description')
 
-        self.__download_file(download_url, self.output_path)
+    return {
+        'video_url': video_url,
+        'title': video_title,
+        'thumbnail_url': video_thumbnail,
+        'description': video_description,
+        'platform': 'YouTube',
+    }
 
-        self.__driver.close()
 
-    def __download_file(self, url, output_path):
-        """Helper function for downloading the file."""
-        response = requests.get(url, stream=True)
-        with open(output_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+"""
+# Function to scrape Instagram using Instaloader
+def scrape_instagram_video_instaloader(url):
+    L = instaloader.Instaloader()
+    try:
+        # Extract shortcode from Instagram URL
+        shortcode = url.split('/')[-2]
+        post = instaloader.Post.from_shortcode(L.context, shortcode)
+        video_url = post.video_url
+        video_title = post.title or 'Instagram Video'
+        return {
+            'video_url': video_url,
+            'title': video_title,
+            'platform': 'Instagram'
+        }
+    except (BadResponseException, LoginRequiredException) as e:
+        print(f"Error fetching Instagram video with Instaloader: {str(e)}")
+        return None
 
-# Define functions for each social media platform
-def scrape_youtube_video(video_url, output_filename=""):
-    scraper = VideoScraper("https://ytb.rip/", video_url, output_filename)
-    scraper.download_video()
+# Fallback function to scrape Instagram using yt-dlp
+def scrape_instagram_video_yt_dlp(url):
+    ydl_opts = {
+        'format': 'best',
+        'quiet': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cookie': 'your_cookie_here',  # Optional: Pass cookies if needed
+        }
+    }
 
-def scrape_facebook_video(video_url, output_filename=""):
-    scraper = VideoScraper("https://getfvid.com", video_url, output_filename)
-    scraper.download_video()
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            video_info = ydl.extract_info(url, download=False)
+            return {
+                'video_url': video_info.get('url'),
+                'title': video_info.get('title', 'Instagram Video'),
+                'platform': 'Instagram'
+            }
+    except Exception as e:
+        print(f"Error fetching Instagram video with yt-dlp: {str(e)}")
+        return None
 
-def scrape_twitter_video(video_url, output_filename=""):
-    scraper = VideoScraper("https://twdown.net", video_url, output_filename)
-    scraper.download_video()
 
-def scrape_tiktok_video(video_url, output_filename=""):
-    scraper = VideoScraper("https://snaptik.app", video_url, output_filename)
-    scraper.download_video()
+# Main function to scrape Instagram video, trying Instaloader first, yt-dlp as fallback
+def scrape_instagram_video(url):
+    video_info = scrape_instagram_video_instaloader(url)
+    if not video_info:
+        # If Instaloader fails, try yt-dlp
+        video_info = scrape_instagram_video_yt_dlp(url)
+    return video_info
 
-def scrape_instagram_video(video_url, output_filename=""):
-    scraper = VideoScraper("https://snapinsta.app", video_url, output_filename)
-    scraper.download_video()
+
+
+# Scraping TikTok video using yt-dlp
+def scrape_tiktok_video(url):
+    ydl_opts = {
+        'format': 'best',
+        'quiet': True,
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return {
+                'title': info.get('title', 'TikTok Video'),
+                'video_url': info.get('url'),
+                'thumbnail_url': info.get('thumbnail', ''),
+                'platform': 'TikTok',
+            }
+    except Exception as e:
+        print(f"Error fetching TikTok video: {str(e)}")
+        return None
+"""
+
+# Scraping Facebook video using yt-dlp
+def scrape_facebook_video(url):
+    ydl_opts = {
+        'format': 'best',
+        'quiet': True,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(url, download=False)
+            return {
+                'title': info.get('title'),
+                'video_url': info.get('url'),
+                'thumbnail_url': info.get('thumbnail'),
+                'platform': 'Facebook',
+            }
+        except Exception as e:
+            print(f"Error fetching Facebook video: {str(e)}")
+            return None
+
+
+# Scraping Twitter video using yt-dlp
+def scrape_twitter_video(url):
+    try:
+        ydl_opts = {
+            'quiet': True,
+            'format': 'best',  # Choose best quality by default
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            video_info = ydl.extract_info(url, download=False)
+            return {
+                'title': video_info.get('title', 'Twitter Video'),
+                'video_url': video_info['url'],
+                'platform': 'Twitter',
+                'formats': video_info.get('formats', [])  # Include formats for quality selection
+            }
+    except Exception as e:
+        print(f"Error scraping Twitter video: {str(e)}")
+        return None
+"""

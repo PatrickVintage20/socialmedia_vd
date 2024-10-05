@@ -2,7 +2,7 @@ import requests
 from django.http import JsonResponse
 from django.shortcuts import render
 
-def download_video(request):
+def download_video_view(request):
     if request.method == "POST":
         video_url = request.POST.get('url')
         filename = request.POST.get('filename', 'video_download')  # Default filename

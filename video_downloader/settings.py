@@ -31,7 +31,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 SECRET_KEY = config('SECRET_KEY')
 
 # Allowed hosts for production
-ALLOWED_HOSTS = ['https://video-downloader-rdlb.onrender.com', 'localhost']
+ALLOWED_HOSTS = ['https://video-downloader-rdlb.onrender.com', 'localhost', '127.0.0.1']
 
 #ALLOWED_HOSTS = []
 

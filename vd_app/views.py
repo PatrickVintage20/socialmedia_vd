@@ -1,31 +1,93 @@
-import requests
 from django.http import JsonResponse
+from .playwright_scrapers import scrape_youtube_video, scrape_facebook_video, scrape_twitter_video, scrape_tiktok_video, scrape_instagram_video
+
+def scrape_youtube_video_view(request):
+    video_url = request.GET.get('url')
+    scrape_youtube_video(video_url)
+    return JsonResponse({'status': 'success', 'message': 'YouTube video downloaded successfully!'})
+
+def scrape_facebook_video_view(request):
+    video_url = request.GET.get('url')
+    scrape_facebook_video(video_url)
+    return JsonResponse({'status': 'success', 'message': 'Facebook video downloaded successfully!'})
+
+def scrape_twitter_video_view(request):
+    video_url = request.GET.get('url')
+    scrape_twitter_video(video_url)
+    return JsonResponse({'status': 'success', 'message': 'Twitter video downloaded successfully!'})
+
+def scrape_tiktok_video_view(request):
+    video_url = request.GET.get('url')
+    scrape_tiktok_video(video_url)
+    return JsonResponse({'status': 'success', 'message': 'TikTok video downloaded successfully!'})
+
+def scrape_instagram_video_view(request):
+    video_url = request.GET.get('url')
+    scrape_instagram_video(video_url)
+    return JsonResponse({'status': 'success', 'message': 'Instagram video downloaded successfully!'})
+
+
+def Home(request):
+    return render(request, "vd_app/video_download.html")
+
+def how_to(request):
+    return render(request, 'vd_app/how_to.html')
+
+def contact_us(request):
+    return render(request, 'vd_app/contact_us.html')
+
+
+
+
+"""
+import requests
 from django.shortcuts import render
+from django.http import JsonResponse
+
+# Your RapidAPI key and host
+RAPIDAPI_KEY = "edb9006024mshc614a8e04873cecp1b25f4jsna580f65d63b4"
+RAPIDAPI_HOST = "social-media-video-downloader.p.rapidapi.com"
 
 def video_download_view(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         video_url = request.POST.get('url')
-        filename = request.POST.get('filename', 'video_download')  # Default filename
-        
-        api_url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/all"
+
+        # Check if URL is provided
+        if not video_url:
+            return render(request, 'vd_app/video_download.html', {'error': 'Please provide a valid video URL.'})
+
+        # Prepare headers for the RapidAPI request
         headers = {
-            "x-rapidapi-host": "social-media-video-downloader.p.rapidapi.com",
-            "x-rapidapi-key": "edb9006024mshc614a8e04873cecp1b25f4jsna580f65d63b4"  # Replace with your actual API key
-        }
-        params = {
-            "url": video_url,
-            "filename": filename
+            'x-rapidapi-key': RAPIDAPI_KEY,
+            'x-rapidapi-host': RAPIDAPI_HOST
         }
 
-        response = requests.get(api_url, headers=headers, params=params)
+        # Prepare the request URL
+        api_url = f"https://{RAPIDAPI_HOST}/smvd/get/all?url={video_url}"
 
-        if response.status_code == 200:
-            video_data = response.json()
-            return JsonResponse(video_data)
-        else:
-            return JsonResponse({"error": "Failed to download video"}, status=response.status_code)
+        try:
+            # Make a GET request to the RapidAPI endpoint
+            response = requests.get(api_url, headers=headers)
+            data = response.json()
 
-    return render(request, 'video_download.html')  # Render your form or page for input
+            # Check if response contains the video data
+            if 'data' in data and data['data'].get('download_url'):
+                video_data = {
+                    'download_url': data['data']['download_url'],
+                    'platform': data['data']['platform'],
+                    'title': data['data']['title'],
+                }
+                return render(request, 'vd_app/video_download.html', {'video': video_data})
+
+            else:
+                # Error handling for invalid response
+                return render(request, 'vd_app/video_download.html', {'error': 'Unable to retrieve video information. Please try again.'})
+
+        except Exception as e:
+            # Handle any exceptions such as network issues
+            return render(request, 'vd_app/video_download.html', {'error': f"An error occurred: {str(e)}"})
+
+    return render(request, 'vd_app/video_download.html')
 
 
 
@@ -71,7 +133,7 @@ def contact_us(request):
 
 
 
-"""
+
 from django.shortcuts import render
 from django.http import HttpResponse, StreamingHttpResponse
 from urllib.parse import urlencode, unquote_plus

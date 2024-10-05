@@ -68,7 +68,7 @@ def how_to(request):
 def contact_us(request):
     return render(request, 'vd_app/contact_us.html')
 
-    
+
 
 
 """

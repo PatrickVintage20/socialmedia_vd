@@ -16,3 +16,7 @@ staticfiles/
 
 # Secrets
 .env
+
+#cookies
+www.instagram.com_cookies.txt
+

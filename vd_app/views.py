@@ -6,12 +6,10 @@ import tempfile
 import shutil
 import concurrent.futures
 import uuid  # For generating unique filenames
+from django.conf import settings  # Import settings for cookies path
 
 # Directory for temporary video storage
 DOWNLOAD_DIR = tempfile.gettempdir()
-
-# Path to cookies file (assuming cookies are used for all platforms)
-COOKIES_FILE = os.path.expanduser("C:/Users/HP/Downloads/www.instagram.com_cookies.txt")  # Update this path
 
 # Check if ffmpeg is installed and available
 def is_ffmpeg_installed():
@@ -29,7 +27,7 @@ def yt_dlp_download_video(video_url, output_filename):
         'format': 'best',
         'quiet': True,
         'noplaylist': True,
-        'cookies': COOKIES_FILE,  # Pass cookies file for all requests
+        'cookies': settings.COOKIES_FILE_PATH,  # Pass cookies file for all requests from settings
         'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}] if is_ffmpeg_installed() else [],
     }
     
@@ -102,9 +100,6 @@ def how_to(request):
 
 def contact_us(request):
     return render(request, 'vd_app/contact_us.html')
-
-
-
 
 
 

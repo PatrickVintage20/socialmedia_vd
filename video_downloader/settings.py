@@ -15,6 +15,14 @@ import os
 from decouple import AutoConfig
 
 
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Cookies file path, set a default for local dev and allow overrides via environment variables
+COOKIES_FILE_PATH = os.getenv('COOKIES_FILE_PATH', os.path.join(BASE_DIR, 'www.instagram.com_cookies.txt'))
+
+
+
 # BASE_DIR will point to the project root
 BASE_DIR = Path(__file__).resolve().parent.parent
 

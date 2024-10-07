@@ -3,29 +3,52 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 import os
 import tempfile
+import shutil
+import concurrent.futures
+import uuid  # For generating unique filenames
 
-# Directory to store the downloaded videos (temporary storage)
-DOWNLOAD_DIR = tempfile.gettempdir()  # Use system's temp directory
+# Directory for temporary video storage
+DOWNLOAD_DIR = tempfile.gettempdir()
 
-def download_video_with_ytdlp(video_url, output_filename):
+# Path to cookies file (assuming cookies are used for all platforms)
+COOKIES_FILE = os.path.expanduser("C:/Users/HP/Downloads/www.instagram.com_cookies.txt")  # Update this path
+
+# Check if ffmpeg is installed and available
+def is_ffmpeg_installed():
+    try:
+        yt_dlp.utils.check_executable('ffmpeg', ['-version'])
+        return True
+    except yt_dlp.utils.DownloadError:
+        return False
+
+# yt-dlp download function with cookies and unique filename handling
+def yt_dlp_download_video(video_url, output_filename):
+    unique_filename = f"{uuid.uuid4()}.mp4"  # Generate unique filename for each request
     ydl_opts = {
-        'outtmpl': os.path.join(DOWNLOAD_DIR, output_filename),
+        'outtmpl': os.path.join(DOWNLOAD_DIR, unique_filename),  # Save with unique filename
         'format': 'best',
         'quiet': True,
+        'noplaylist': True,
+        'cookies': COOKIES_FILE,  # Pass cookies file for all requests
+        'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}] if is_ffmpeg_installed() else [],
     }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(video_url, download=True)
+            video_filename = ydl.prepare_filename(info_dict)  # Path to the downloaded video
+            return {
+                'title': info_dict.get('title', 'Unknown Title'),
+                'thumbnail': info_dict.get('thumbnail', ''),
+                'description': info_dict.get('description', 'No description available.'),
+                'filename': video_filename  # Use the correct filename here
+            }
+    except yt_dlp.utils.DownloadError as e:
+        raise Exception(f"Download failed: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error fetching video: {str(e)}")
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(video_url, download=True)
-        return {
-            'title': info_dict.get('title', 'Unknown Title'),
-            'thumbnail': info_dict.get('thumbnail', ''),
-            'description': info_dict.get('description', 'No description available.'),
-            'formats': ydl.list_formats(info_dict),
-            'filename': ydl.prepare_filename(info_dict)
-        }
-
-import concurrent.futures
-
+# Main view function for video downloading
 def video_download(request):
     video_info = {}
 
@@ -36,7 +59,7 @@ def video_download(request):
         try:
             output_filename = platform + "_video.mp4"
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(download_video_with_ytdlp, video_url, output_filename)
+                future = executor.submit(yt_dlp_download_video, video_url, output_filename)
                 video_info = future.result()
 
         except Exception as e:
@@ -44,8 +67,7 @@ def video_download(request):
 
     return render(request, 'vd_app/video_download.html', {'video_info': video_info})
 
-
-
+# File download function
 def download_video(request, filename):
     file_path = os.path.join(DOWNLOAD_DIR, filename)
     if os.path.exists(file_path):
@@ -56,8 +78,7 @@ def download_video(request, filename):
     else:
         return JsonResponse({'error': 'File not found.'})
 
-
-
+# Determine platform from URL
 def get_platform_from_url(url):
     """Determines the platform from the URL."""
     if "youtube.com" in url or "youtu.be" in url:
@@ -72,7 +93,7 @@ def get_platform_from_url(url):
         return "instagram"
     return "unknown"
 
-
+# Other view functions
 def scrape_video(request):
     return render(request, "vd_app/video_download.html")
 
@@ -86,7 +107,111 @@ def contact_us(request):
 
 
 
+
+
 """
+
+import yt_dlp
+from django.shortcuts import render
+from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
+import requests
+import os
+
+
+# Extract video stream URL using yt-dlp
+def get_video_stream(video_url):
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',  # Combine best video and best audio
+        'quiet': True,
+        'noplaylist': True,
+        'outtmpl': '/dev/null',  # Don't save the file
+        'progress_hooks': [lambda d: print(d)],  # Hook to see progress (optional)
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(video_url, download=False)
+        # Get the URL for the video + audio combined format
+        for f in info_dict['formats']:
+            if f['ext'] == 'mp4' and f['acodec'] != 'none' and f['vcodec'] != 'none':
+                video_url = f['url']  # Select format that contains both audio and video
+                return video_url
+        raise Exception("No suitable video format found.")
+
+
+
+# Handle video download page
+def video_download(request):
+    video_info = {}
+
+    if request.method == "POST":
+        video_url = request.POST.get('url')
+        platform = get_platform_from_url(video_url)
+
+        try:
+            stream_url = get_video_stream(video_url)  # Get the stream URL
+            video_info = {
+                'url': stream_url,
+                'title': 'Video Title',  # Optionally add the title from info_dict
+            }
+        except Exception as e:
+            video_info['error'] = str(e)
+
+    return render(request, 'vd_app/video_download.html', {'video_info': video_info})
+
+
+
+def stream_video(request):
+    video_url = request.GET.get('url')
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+        'Referer': video_url  # Include referer header
+    }
+
+    try:
+        # Make a request to the video URL with proper headers
+        response = requests.get(video_url, headers=headers, stream=True)
+        response.raise_for_status()  # Raise an error for bad responses (4xx/5xx)
+
+        # Stream the video content directly to the user
+        return StreamingHttpResponse(response.iter_content(chunk_size=8192), content_type="video/mp4")
+
+    except requests.exceptions.RequestException as e:
+        # Log the error and show an error page
+        print(f"Error fetching the video: {e}")
+        return render(request, 'vd_app/error.html', {'error_message': 'Unable to stream the video. Please try again.'})
+
+
+# Platform detection
+def get_platform_from_url(url):
+    Determines the platform from the URL
+    if "youtube.com" in url or "youtu.be" in url:
+        return "youtube"
+    elif "facebook.com" in url:
+        return "facebook"
+    elif "twitter.com" in url:
+        return "twitter"
+    elif "tiktok.com" in url:
+        return "tiktok"
+    elif "instagram.com" in url:
+        return "instagram"
+    return "unknown"
+
+
+# Other views
+def scrape_video(request):
+    return render(request, "vd_app/video_download.html")
+
+def how_to(request):
+    return render(request, 'vd_app/how_to.html')
+
+def contact_us(request):
+    return render(request, 'vd_app/contact_us.html')
+
+
+
+
+
+
 import requests
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -277,9 +402,6 @@ def video_download(request):
     return render(request, 'vd_app/video_download.html', {'error': error})
 
 
-
-
-    
 """
 
 

@@ -1,3 +1,94 @@
+import requests
+from django.shortcuts import render
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import yt_dlp
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+
+# Selenium-based video scraping (use this for platforms requiring dynamic page interaction)
+def selenium_download_video(video_url):
+    options = Options()
+    options.add_argument("--headless")  # Run Chrome in headless mode
+
+    # Automatically download and set up the correct version of ChromeDriver
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+
+    try:
+        driver.get(video_url)
+        driver.implicitly_wait(10)  # Adjust the wait time if necessary
+
+        # Example: Find the video element or direct video link
+        video_element = driver.find_element('tag name', 'video')
+        video_src = video_element.get_attribute('src')
+
+        return video_src  # Return the direct video URL
+    except Exception as e:
+        print(f"Error fetching video: {e}")
+    finally:
+        driver.quit()
+
+    return None
+
+
+# Function to use yt-dlp for downloading videos
+def yt_dlp_download_video(video_url):
+    ydl_opts = {
+        'format': 'best',
+        'quiet': True,
+        'noplaylist': True,
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(video_url, download=False)
+            if 'formats' in info_dict:
+                video_download_url = info_dict['formats'][0]['url']
+                return video_download_url
+    except Exception as e:
+        print(f"Error fetching video: {e}")
+
+    return None
+
+# Main function that decides which method to use based on the platform
+def download_video(video_url):
+    if "tiktok.com" in video_url:
+        return selenium_download_video(video_url)  # Use Selenium for TikTok
+    elif "facebook.com" in video_url:
+        return selenium_download_video(video_url)  # Use Selenium for Facebook
+    else:
+        return yt_dlp_download_video(video_url)  # Use yt-dlp for others
+
+def video_download(request):
+    download_link = None
+    error_message = None
+
+    if request.method == "POST":
+        video_url = request.POST.get('url')
+
+        try:
+            download_link = download_video(video_url)
+
+            if download_link is None:
+                error_message = "Could not fetch the video. Please check the URL or the platform."
+        except Exception as e:
+            error_message = f"Error: {str(e)}"
+
+    return render(request, 'vd_app/video_download.html', {'download_link': download_link, 'error_message': error_message})
+
+def scrape_video(request):
+    return render(request, "vd_app/video_download.html")
+
+def how_to(request):
+    return render(request, 'vd_app/how_to.html')
+
+def contact_us(request):
+    return render(request, 'vd_app/contact_us.html')
+
+
+
+
 
 """
 import youtube_dl

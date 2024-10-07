@@ -23,7 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('vd_app.urls')),
     path('Home/', views.scrape_video, name="home"),
-    path('how-to-use/', views.how_to, name='how_to'),
+    path('download/<str:filename>/', views.download_video, name='download_video'),
+    path('how-to/', views.how_to, name='how_to'),
     path('contact-us/', views.contact_us, name='contact_us'),
 ]
 

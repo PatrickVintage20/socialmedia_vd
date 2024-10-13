@@ -45,6 +45,7 @@ def yt_dlp_download_video(video_url, output_filename):
         raise Exception(f"Download failed: {str(e)}")
     except Exception as e:
         raise Exception(f"Error fetching video: {str(e)}")
+        
 
 # Main view function for video downloading
 def video_download(request):

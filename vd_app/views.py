@@ -1,14 +1,13 @@
 import yt_dlp
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 import os
 import tempfile
-import shutil
 import concurrent.futures
-import uuid  # For generating unique filenames
-from django.conf import settings  # Import settings for cookies path
+import uuid
+from django.conf import settings  # For accessing cookie paths
 
-# Directory for temporary video storage
+# Directory for temporary video storage (cross-platform compatibility)
 DOWNLOAD_DIR = tempfile.gettempdir()
 
 # Check if ffmpeg is installed and available
@@ -20,17 +19,17 @@ def is_ffmpeg_installed():
         return False
 
 # yt-dlp download function with cookies and unique filename handling
-def yt_dlp_download_video(video_url, output_filename):
-    unique_filename = f"{uuid.uuid4()}.mp4"  # Generate unique filename for each request
+def yt_dlp_download_video(video_url):
+    unique_filename = f"{uuid.uuid4()}.mp4"  # Generate a unique filename for each request
     ydl_opts = {
         'outtmpl': os.path.join(DOWNLOAD_DIR, unique_filename),  # Save with unique filename
         'format': 'best',
         'quiet': True,
         'noplaylist': True,
-        'cookies': settings.COOKIES_FILE_PATH,  # Pass cookies file for all requests from settings
+        'cookies': settings.COOKIES_FILE_PATH,  # Pass cookies file from settings
         'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}] if is_ffmpeg_installed() else [],
     }
-    
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=True)
@@ -39,13 +38,13 @@ def yt_dlp_download_video(video_url, output_filename):
                 'title': info_dict.get('title', 'Unknown Title'),
                 'thumbnail': info_dict.get('thumbnail', ''),
                 'description': info_dict.get('description', 'No description available.'),
-                'filename': video_filename  # Use the correct filename here
+                'filename': video_filename  # The full path of the video
             }
     except yt_dlp.utils.DownloadError as e:
         raise Exception(f"Download failed: {str(e)}")
     except Exception as e:
         raise Exception(f"Error fetching video: {str(e)}")
-        
+
 
 # Main view function for video downloading
 def video_download(request):
@@ -56,26 +55,25 @@ def video_download(request):
         platform = get_platform_from_url(video_url)
 
         try:
-            output_filename = platform + "_video.mp4"
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(yt_dlp_download_video, video_url, output_filename)
+                future = executor.submit(yt_dlp_download_video, video_url)
                 video_info = future.result()
+                video_info['filename'] = os.path.basename(video_info['filename'])  # Extract the filename from the full path
 
         except Exception as e:
             video_info['error'] = str(e)
 
     return render(request, 'vd_app/video_download.html', {'video_info': video_info})
 
-# File download function
+
+# File download function using FileResponse
 def download_video(request, filename):
     file_path = os.path.join(DOWNLOAD_DIR, filename)
     if os.path.exists(file_path):
-        with open(file_path, 'rb') as file:
-            response = HttpResponse(file.read(), content_type='video/mp4')
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            return response
+        return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=filename)
     else:
         return JsonResponse({'error': 'File not found.'})
+
 
 # Determine platform from URL
 def get_platform_from_url(url):
@@ -92,6 +90,7 @@ def get_platform_from_url(url):
         return "instagram"
     return "unknown"
 
+
 # Other view functions
 def scrape_video(request):
     return render(request, "vd_app/video_download.html")
@@ -101,6 +100,7 @@ def how_to(request):
 
 def contact_us(request):
     return render(request, 'vd_app/contact_us.html')
+
 
 
 

@@ -18,6 +18,9 @@ from decouple import AutoConfig
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Use a relative path for the download directory
+DOWNLOAD_DIR = os.path.join(BASE_DIR, 'downloads')
+
 # Cookies file path, set a default for local dev and allow overrides via environment variables
 COOKIES_FILE_PATH = os.getenv('COOKIES_FILE_PATH', os.path.join(BASE_DIR, 'www.instagram.com_cookies.txt'))
 
@@ -34,7 +37,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-8a$$!k)_m27p-@8be*!475x4y9q7800c37!__ox+=+w82_+ed9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+#DEBUG = config('DEBUG', default=False, cast=bool)
+
+DEBUG = True
+
+SESSION_COOKIE_SECURE = True  # Set to True in production when using HTTPS
+CSRF_COOKIE_SECURE = True  # Set to True in production when using HTTPS
+
 
 SECRET_KEY = config('SECRET_KEY')
 

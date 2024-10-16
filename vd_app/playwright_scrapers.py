@@ -122,7 +122,6 @@ def scrape_youtube_video(url):
     }
 
 
-"""
 # Function to scrape Instagram using Instaloader
 def scrape_instagram_video_instaloader(url):
     L = instaloader.Instaloader()
@@ -196,7 +195,7 @@ def scrape_tiktok_video(url):
         print(f"Error fetching TikTok video: {str(e)}")
         return None
 """
-
+"""
 # Scraping Facebook video using yt-dlp
 def scrape_facebook_video(url):
     ydl_opts = {

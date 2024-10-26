@@ -38,8 +38,7 @@ SECRET_KEY = 'django-insecure-8a$$!k)_m27p-@8be*!475x4y9q7800c37!__ox+=+w82_+ed9
 
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = config('DEBUG', default=False, cast=bool)
-
-DEBUG = False
+DEBUG = True
 
 SESSION_COOKIE_SECURE = True  # Set to True in production when using HTTPS
 CSRF_COOKIE_SECURE = True  # Set to True in production when using HTTPS
